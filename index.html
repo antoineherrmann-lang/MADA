@@ -59,6 +59,7 @@
     --role-adj-bg:#dff5ec; --role-adj-border:#92d8bd; --role-adj-ink:#0f5c40;
     --role-other-bg:#e3e1e6; --role-other-border:#b8b4c0; --role-other-ink:#4a4652;
     --role-noun-bg:#fbecc4; --role-noun-border:#e0c374; --role-noun-ink:#6b5416;
+    --halftone-dot: rgba(28,26,22,0.07);
     --cta-1: rgba(34,31,26,0.94);
     --cta-2: rgba(34,31,26,0.80);
     --cta-ink: #F7F5EF;
@@ -122,6 +123,7 @@
     --role-adj-bg:#1d3a30; --role-adj-border:#33604e; --role-adj-ink:#8fe0c0;
     --role-other-bg:#302e38; --role-other-border:#4d4958; --role-other-ink:#c4c0d0;
     --role-noun-bg:#453615; --role-noun-border:#6b5420; --role-noun-ink:#f0d888;
+    --halftone-dot: rgba(255,255,255,0.06);
     --cta-1: rgba(248,246,240,0.32);
     --cta-2: rgba(248,246,240,0.16);
     --cta-ink: #FFFDF8;
@@ -146,14 +148,6 @@
   *{box-sizing:border-box; touch-action:manipulation;}
   html,body{margin:0;padding:0;}
   body{ padding-top:env(safe-area-inset-top, 0px); padding-bottom:env(safe-area-inset-bottom, 0px); transition:background-color .3s ease, color .3s ease; }
-  body.dark-mode{
-    background:
-      radial-gradient(120% 80% at 12% 0%, rgba(78,92,60,0.22) 0%, transparent 55%),
-      radial-gradient(100% 70% at 92% 30%, rgba(46,111,126,0.12) 0%, transparent 58%),
-      radial-gradient(110% 75% at 50% 100%, rgba(201,123,90,0.09) 0%, transparent 60%),
-      var(--paper);
-    background-attachment:fixed;
-  }
   body{
     background:var(--paper);
     color:var(--ink);
@@ -190,25 +184,17 @@
     letter-spacing:0.14em; text-transform:uppercase; color:var(--jade-dark);
     background:rgba(63,107,53,0.1); padding:4px 10px; border-radius:100px; margin-bottom:14px;
   }
-  .hero-card::before{
-    content:''; position:absolute; top:0; left:0; right:0; z-index:1; pointer-events:none;
-    height:calc(env(safe-area-inset-top, 0px) + 52px);
-    background:linear-gradient(180deg, var(--hero-base-1) 0%, var(--hero-base-1) 55%, transparent 100%);
-  }
   .hero-card{
-    background:
-      radial-gradient(78% 62% at 14% 8%, var(--hero-a) 0%, transparent 62%),
-      radial-gradient(70% 55% at 88% -4%, var(--hero-b) 0%, transparent 58%),
-      radial-gradient(95% 75% at 72% 104%, var(--hero-c) 0%, transparent 66%),
-      radial-gradient(60% 50% at 40% 60%, var(--hero-d) 0%, transparent 70%),
-      linear-gradient(162deg, var(--hero-base-1) 0%, var(--hero-base-2) 100%);
-    background-size:180% 180%, 170% 170%, 190% 190%, 200% 200%, 100% 100%;
-    border-radius:0 0 30px 30px;
-    margin:calc(-1 * env(safe-area-inset-top, 0px) - 90px) -20px 0;
-    padding:calc(env(safe-area-inset-top, 0px) + 112px) 26px 30px;
+    background:linear-gradient(158deg, var(--glass-1), var(--glass-2));
+    backdrop-filter:blur(30px) saturate(200%); -webkit-backdrop-filter:blur(30px) saturate(200%);
+    border:1px solid var(--glass-border);
+    border-radius:28px;
+    margin:14px 0 0;
+    padding:28px 26px 26px;
     position:relative; overflow:hidden;
-    box-shadow:var(--shadow-lift);
-    animation:heroReveal .8s var(--swift) both, heroOrganicDrift 32s ease-in-out infinite alternate;
+    color:var(--ink);
+    box-shadow:var(--shadow-lift), inset 0 1px 0 rgba(255,255,255,0.35);
+    animation:heroReveal .8s var(--swift) both;
   }
   @keyframes heroOrganicDrift{
     0%{ background-position: 8% 12%, 92% 0%, 70% 100%, 35% 55%, 0 0; }
@@ -221,28 +207,35 @@
     background:var(--veil-color, var(--paper));
     transition:background .3s var(--smooth);
   }
+  #app{ position:relative; z-index:1; }
+  .ambient{
+    position:fixed; top:0; left:0; right:0; height:62vh; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(88% 58% at 16% 4%, var(--amb-1) 0%, transparent 62%),
+      radial-gradient(78% 52% at 90% 0%, var(--amb-2) 0%, transparent 56%),
+      radial-gradient(104% 72% at 58% 46%, var(--amb-3) 0%, transparent 68%);
+    background-size:170% 170%, 160% 160%, 190% 190%;
+    -webkit-mask-image:linear-gradient(180deg, #000 0%, #000 46%, transparent 100%);
+    mask-image:linear-gradient(180deg, #000 0%, #000 46%, transparent 100%);
+    animation:ambientDrift 44s ease-in-out infinite alternate;
+    transition:background 1.2s var(--smooth);
+  }
+  @keyframes ambientDrift{
+    0%{ background-position: 10% 8%, 92% 0%, 58% 44%; }
+    50%{ background-position: 26% 0%, 74% 12%, 44% 56%; }
+    100%{ background-position: 4% 16%, 98% 4%, 66% 38%; }
+  }
   .hero-layer{ position:absolute; inset:0; z-index:0; pointer-events:none; }
-  .hero-chevrons{
-    background:radial-gradient(120% 85% at 88% -10%, var(--accent-glow) 0%, transparent 58%);
-    opacity:0.7;
-    transform:translateY(calc(var(--hero-par, 0px) * 0.4));
-  }
-  .hero-chevrons-2{
-    background:radial-gradient(90% 70% at 6% 105%, rgba(255,255,255,0.045) 0%, transparent 62%);
-  }
+  .hero-chevrons{ display:none; }
+  .hero-chevrons-2{ display:none; }
   .hero-halftone{
-    background-image:radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-image:radial-gradient(circle, var(--halftone-dot) 1px, transparent 1px);
     background-size:17px 17px;
-    mask-image:linear-gradient(190deg, #000 0%, transparent 55%);
-    -webkit-mask-image:linear-gradient(190deg, #000 0%, transparent 55%);
-    transform:translateY(calc(var(--hero-par, 0px) * 0.25));
+    -webkit-mask-image:linear-gradient(195deg, #000 0%, transparent 58%);
+    mask-image:linear-gradient(195deg, #000 0%, transparent 58%);
   }
   .hero-blade{ position:absolute; z-index:0; pointer-events:none; }
-  .hero-blade-1{
-    left:26px; right:26px; top:calc(env(safe-area-inset-top, 0px) + 96px);
-    height:1px; background:linear-gradient(90deg, var(--hero-accent) 0%, transparent 55%);
-    opacity:0.45;
-  }
+  .hero-blade-1{ display:none; }
   .hero-blade-2{ display:none; }
   @keyframes heroReveal{
     0%{ opacity:0; transform:translateY(-14px); }
@@ -250,32 +243,32 @@
   }
   .hero-row{ position:relative; z-index:2; display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
   .hero-logo{
-    width:88px; color:#fff;
-    filter:drop-shadow(0 3px 16px rgba(0,0,0,0.4));
+    width:88px; color:var(--ink);
+    filter:drop-shadow(0 2px 10px rgba(28,26,22,0.16));
   }
   .hero-logo svg{ display:block; width:100%; height:auto; }
   .hero-eyebrow{
     font-family:'Instrument Sans',sans-serif; font-weight:600; font-size:9px;
-    letter-spacing:.26em; text-transform:uppercase; color:var(--hero-accent);
-    margin-bottom:16px; opacity:0.75;
+    letter-spacing:.26em; text-transform:uppercase; color:var(--accent-deep);
+    margin-bottom:16px; opacity:1;
   }
   .hero-eyebrow::before{ content:none; }
   .hero-sub{
     font-family:'Instrument Sans',sans-serif; font-weight:400; font-size:13px;
-    color:rgba(255,255,255,0.55); margin-top:14px; letter-spacing:.005em;
+    color:var(--ink-soft); margin-top:14px; letter-spacing:.005em;
   }
-  .hero-gloss{ color:rgba(255,255,255,0.3); }
+  .hero-gloss{ opacity:0.6; }
   .hero-stat-strip{
     position:relative; z-index:2; display:flex; margin-top:28px;
-    padding-top:20px; border-top:1px solid rgba(255,255,255,0.08);
+    padding-top:20px; border-top:1px solid var(--line);
   }
   .hero-stat{ flex:1; display:flex; flex-direction:column; gap:5px; }
-  .hero-stat + .hero-stat{ padding-left:16px; border-left:1px solid rgba(255,255,255,0.07); }
-  .hero-stat-num{ font-family:'Unbounded',sans-serif; font-weight:600; font-size:17px; color:rgba(255,255,255,0.95); line-height:1; letter-spacing:-.01em; }
-  .hero-stat-num .accent{ color:var(--hero-accent); }
+  .hero-stat + .hero-stat{ padding-left:16px; border-left:1px solid var(--line); }
+  .hero-stat-num{ font-family:'Unbounded',sans-serif; font-weight:600; font-size:17px; color:var(--ink); line-height:1; letter-spacing:-.01em; }
+  .hero-stat-num .accent{ color:var(--accent-deep); }
   .hero-stat-label{
     font-family:'Instrument Sans',sans-serif; font-size:8px; font-weight:500;
-    letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,0.35);
+    letter-spacing:.14em; text-transform:uppercase; color:var(--ink-soft); opacity:0.75;
   }
   .home-section{ margin-top:26px; }
   .chat-bubble-wrap{ display:flex; justify-content:center; padding:0 20px; margin-top:16px; position:relative; z-index:3; }
@@ -395,7 +388,7 @@
 
   .theme-toggle{
     width:34px; height:34px; border-radius:100px; flex-shrink:0;
-    border:1px solid rgba(255,255,255,0.4); background:rgba(255,255,255,0.18); font-size:16px; color:#fff;
+    border:1px solid var(--glass-border); background:linear-gradient(160deg, var(--glass-1), var(--glass-2)); font-size:16px; color:var(--ink);
     display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px);
   }
   .theme-toggle{ transition:transform .2s ease; }
@@ -789,6 +782,39 @@
   .settings-row-arrow{ color:var(--ink-soft); font-size:16px; }
   .settings-row.danger .settings-row-label{ color:var(--laterite); font-weight:600; }
 
+  .settings-hint{ font-size:11px; color:var(--ink-soft); margin:16px 0 8px; letter-spacing:.02em; }
+  .ambient-auto-btn{
+    width:100%; display:flex; align-items:center; gap:14px; text-align:left;
+    padding:14px 16px; border-radius:16px; margin-bottom:10px;
+    background:linear-gradient(160deg, var(--glass-1), var(--glass-2));
+    backdrop-filter:var(--glass-blur, blur(22px) saturate(190%)); -webkit-backdrop-filter:var(--glass-blur, blur(22px) saturate(190%));
+    border:1.5px solid var(--glass-border); box-shadow:var(--shadow); color:var(--ink);
+    transition:transform .28s var(--spring), border-color .2s ease;
+  }
+  .ambient-auto-btn:active{ transform:scale(0.98); }
+  .ambient-auto-btn.selected{ border-color:var(--accent); }
+  .ambient-auto-preview{
+    width:46px; height:46px; border-radius:13px; flex-shrink:0; border:1px solid var(--line);
+    background:linear-gradient(135deg, var(--amb-1, #E8E3C4), var(--amb-2, #D5E4C4), var(--amb-3, #C8D8E4));
+  }
+  .ambient-auto-text{ flex:1; display:flex; flex-direction:column; gap:3px; }
+  .ambient-auto-title{ font-family:'Unbounded',sans-serif; font-weight:600; font-size:14px; color:var(--ink); }
+  .ambient-auto-sub{ font-size:11px; color:var(--ink-soft); font-family:'Instrument Sans',sans-serif; }
+  .ambient-auto-check{ color:var(--accent-deep); display:flex; align-items:center; flex-shrink:0; }
+
+  .ambient-segment{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .ambient-seg-btn{
+    display:flex; flex-direction:column; align-items:stretch; gap:7px;
+    padding:10px; border-radius:13px; font-size:11px; font-weight:600;
+    font-family:'Instrument Sans',sans-serif; color:var(--ink-soft);
+    background:linear-gradient(160deg, var(--glass-1), var(--glass-2));
+    border:1.5px solid var(--glass-border); box-shadow:var(--shadow);
+    transition:transform .28s var(--spring), border-color .2s ease, color .2s ease;
+  }
+  .ambient-seg-btn:active{ transform:scale(0.96); }
+  .ambient-seg-btn.selected{ border-color:var(--accent); color:var(--ink); }
+  .ambient-seg-label{ text-align:center; }
+  .ambient-swatch{ width:100%; height:38px; border-radius:9px; border:1px solid var(--line); }
   .theme-segment{ display:flex; gap:6px; background:linear-gradient(160deg, var(--glass-1), var(--glass-2)); backdrop-filter:var(--glass-blur, blur(22px) saturate(190%)); -webkit-backdrop-filter:var(--glass-blur, blur(22px) saturate(190%)); border:1px solid var(--glass-border); border-radius:14px; padding:6px; box-shadow:var(--shadow); }
   .theme-seg-btn{
     flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px;
@@ -2004,6 +2030,7 @@ async function loadProgress(){
         progress.cardsLearned = parsed.cardsLearned || 0;
         progress.daily = parsed.daily || { date:null, xp:0, cards:0, maki:0, quiz:0, claimed:false };
         progress.themeMode = parsed.themeMode || (parsed.darkMode ? 'dark' : 'auto');
+        progress.ambientMode = parsed.ambientMode || 'auto';
         progress.xpHistory = parsed.xpHistory || [];
         progress.userName = parsed.userName || '';
         progress.nameModalShown = parsed.nameModalShown || false;
@@ -2052,13 +2079,55 @@ function effectiveDark(){
   if(progress.themeMode === 'light') return false;
   return systemPrefersDark();
 }
+// Ambiance coloree evoluant avec le moment de la journee.
+// Les teintes restent claires en haut, pour que le voile applique par iOS
+// sur la barre d'etat s'y fonde sans creer de rupture.
+const AMBIENT_MOMENTS = [
+  { id:'aube',       from:5,  to:9,  label:'Aube',       emoji:'🌅',
+    light:['#FBDCC0','#F6D9D2','#E8E3C4'], dark:['#43291A','#3A2028','#2E2C18'] },
+  { id:'jour',       from:9,  to:17, label:'Jour',       emoji:'☀️',
+    light:['#D8EBBF','#C6E3B0','#F2F0D2'], dark:['#22331A','#1B2D17','#2C3320'] },
+  { id:'crepuscule', from:17, to:21, label:'Crépuscule', emoji:'🌇',
+    light:['#F7CBA8','#E9B4A4','#D6CFAE'], dark:['#4A2A18','#3C1F20','#2A2517'] },
+  { id:'nuit',       from:21, to:5,  label:'Nuit',       emoji:'🌙',
+    light:['#C8D8E4','#BFD0DC','#DCE2E0'], dark:['#16262F','#152230','#1B2A26'] },
+];
+const AMBIENT_CHOICES = [
+  { id:'aube',       label:'Aube',       emoji:'🌅', preview:['#FBDCC0','#E8E3C4'] },
+  { id:'jour',       label:'Jour',       emoji:'☀️', preview:['#D8EBBF','#F2F0D2'] },
+  { id:'crepuscule', label:'Crépuscule', emoji:'🌇', preview:['#F7CBA8','#D6CFAE'] },
+  { id:'nuit',       label:'Nuit',       emoji:'🌙', preview:['#C8D8E4','#DCE2E0'] },
+];
+function currentMoment(){
+  const forced = progress && progress.ambientMode;
+  if(forced && forced !== 'auto'){
+    const m = AMBIENT_MOMENTS.find(x=>x.id===forced);
+    if(m) return m;
+  }
+  const h = new Date().getHours();
+  return AMBIENT_MOMENTS.find(m => m.from < m.to ? (h >= m.from && h < m.to) : (h >= m.from || h < m.to)) || AMBIENT_MOMENTS[1];
+}
+function applyAmbient(){
+  const dark = document.body.classList.contains('dark-mode');
+  const tones = currentMoment()[dark ? 'dark' : 'light'];
+  const root = document.documentElement.style;
+  root.setProperty('--amb-1', tones[0]);
+  root.setProperty('--amb-2', tones[1]);
+  root.setProperty('--amb-3', tones[2]);
+  let amb = document.getElementById('ambientLayer');
+  if(!amb){
+    amb = document.createElement('div');
+    amb.id = 'ambientLayer';
+    amb.className = 'ambient';
+    document.body.appendChild(amb);
+  }
+}
 function updateStatusBarColor(){
   const dark = document.body.classList.contains('dark-mode');
   // Couleur du haut de l'ecran courant : degrade du header sur l'accueil, fond de page ailleurs
-  const onHome = screen && screen.name === 'home';
-  let color;
-  if(onHome) color = dark ? '#35402A' : '#4A5838';
-  else color = dark ? '#15130F' : '#F5F3EE';
+  // La barre d'etat surplombe toujours le fond de page uni : iOS peut y appliquer
+  // son voile sans creer de rupture visible.
+  const color = dark ? '#15130F' : '#F5F3EE';
   document.querySelectorAll('meta[name="theme-color"]').forEach(m=>m.setAttribute('content', color));
   document.documentElement.style.setProperty('--veil-color', color);
   let veil = document.getElementById('statusVeil');
@@ -2071,6 +2140,7 @@ function updateStatusBarColor(){
 }
 function applyTheme(){
   document.body.classList.toggle('dark-mode', effectiveDark());
+  applyAmbient();
   updateStatusBarColor();
 }
 function setThemeMode(mode){
@@ -2510,6 +2580,7 @@ function renderScreen(){
 }
 function render(){
   updateTabBar(screen.name);
+  applyAmbient();
   updateStatusBarColor();
   forceScrollTop();
   renderScreen();
@@ -2554,6 +2625,28 @@ function computeHomeBanner(){
 }
 
 const CHANGELOG = [
+  { version:'4.1.1', name:'Design Update', changes:[
+    'Ambiances nettement plus différenciées : l’aube vire au pêche rosé, la journée au vert franc, le crépuscule à l’abricot chaud et la nuit au bleu glacé — les quatre se distinguent désormais au premier coup d’œil',
+    'Le réglage s’appelle désormais « Ambiance de l’app »',
+    'Sélecteur réorganisé : le mode Automatique occupe un grand bouton en haut, avec un aperçu du dégradé en cours et l’indication du moment détecté, et les quatre ambiances figées se rangent en grille en dessous',
+  ]},
+  { version:'4.1.0', name:'Design Update', changes:[
+    'Correction du dégradé ambiant invisible en mode sombre : le thème sombre définissait son propre fond dégradé, qui recouvrait la couche d’ambiance placée derrière. Ce fond redondant est supprimé et l’ambiance repasse au-dessus, avec le contenu par-dessus elle',
+    'Suppression du trait d’accent qui barrait le haut du panneau de verre',
+    'Correction de l’icône Réglages, blanche sur fond clair donc invisible depuis que le header est devenu un panneau clair : elle reprend l’encre du thème et un fond de verre adapté',
+    'Nouveau réglage dans Apparence : choix de l’ambiance colorée de l’accueil, soit automatique selon l’heure, soit figée sur Aube, Jour, Crépuscule ou Nuit — avec un aperçu de chaque dégradé',
+  ]},
+  { version:'4.0.9', name:'Design Update', changes:[
+    'Haut de l’accueil repensé en tirant parti de la contrainte iOS plutôt qu’en luttant contre : le dégradé devient une ambiance de fond pleine largeur, qui s’étend jusque sous la barre d’état. Comme ses tons y sont clairs, le voile appliqué par le système s’y fond naturellement',
+    'Le header devient un véritable panneau de liquid glass (flou prononcé et saturation élevée) posé sur cette ambiance, qui transparaît au travers',
+    'L’ambiance change selon le moment de la journée : teintes pêche à l’aube, verts sauge en journée, terracotta au crépuscule, bleu-vert profond la nuit — avec une transition douce d’un moment à l’autre',
+    'L’ambiance dérive aussi lentement en continu, et dispose d’une déclinaison propre au mode sombre',
+  ]},
+  { version:'4.0.8', name:'Design Update', changes:[
+    'Nouvelle approche pour le haut de l’accueil : iOS applique son propre voile clair par-dessus tout ce qui passe sous la barre d’état, sans possibilité de le contrôler. Plutôt que de lutter contre, le header ne remonte plus sous cette zone — la barre d’état surplombe désormais le fond de page uni, où le voile devient invisible',
+    'Le header devient une carte flottante aux coins arrondis, détachée du bord haut, ce qui met aussi mieux en valeur le dégradé organique',
+    'Correction du filet d’accent, dont la position calée sur l’ancien header le faisait traverser le logo',
+  ]},
   { version:'4.0.7', name:'Design Update', changes:[
     'Boutons d’action principaux repensés en liquid glass : le vert plein créait une confusion, puisque c’est aussi la couleur des bonnes réponses dans les exercices. Le vert est désormais réservé au succès, et les boutons d’action adoptent un panneau de verre charbon translucide, avec un texte crème très lisible dans les deux thèmes',
     'Hiérarchie des boutons clarifiée : action principale en verre marqué, action secondaire en verre discret',
@@ -3208,6 +3301,7 @@ function renderChangelog(){
 function renderSettings(){
   clearActiveInterval();
   const mode = progress.themeMode || 'auto';
+  const ambMode = progress.ambientMode || 'auto';
   app.innerHTML = `
     <div class="has-tabbar">
       <div class="topbar">
@@ -3232,6 +3326,23 @@ function renderSettings(){
           <button class="theme-seg-btn selectable ${mode==='auto'?'selected':''}" data-mode="auto">${feather('monitor',16)}<span>Auto</span></button>
           <button class="theme-seg-btn selectable ${mode==='light'?'selected':''}" data-mode="light">${feather('sun',16)}<span>Clair</span></button>
           <button class="theme-seg-btn selectable ${mode==='dark'?'selected':''}" data-mode="dark">${feather('moon',16)}<span>Sombre</span></button>
+        </div>
+        <div class="settings-hint">Ambiance de l’app</div>
+        <button class="ambient-auto-btn selectable ${ambMode==='auto'?'selected':''}" data-amb="auto">
+          <span class="ambient-auto-preview"></span>
+          <span class="ambient-auto-text">
+            <span class="ambient-auto-title">Automatique</span>
+            <span class="ambient-auto-sub">Suit le moment de la journée · ${currentMoment().emoji} ${currentMoment().label}</span>
+          </span>
+          <span class="ambient-auto-check">${ambMode==='auto' ? feather('check',16) : ''}</span>
+        </button>
+        <div class="ambient-segment">
+          ${AMBIENT_CHOICES.map(a=>`
+            <button class="ambient-seg-btn selectable ${ambMode===a.id?'selected':''}" data-amb="${a.id}">
+              <span class="ambient-swatch" style="background:linear-gradient(135deg, ${a.preview[0]}, ${a.preview[1]});"></span>
+              <span class="ambient-seg-label">${a.emoji} ${a.label}</span>
+            </button>
+          `).join('')}
         </div>
       </div>
 
@@ -3274,13 +3385,21 @@ function renderSettings(){
         </button>
       </div>
 
-      <button class="footer-version mono selectable" id="goChangelog1">MADA-V4.0.7 — Design Update · ~${formatNumber(computeAppWeight())} Ko</button>
+      <button class="footer-version mono selectable" id="goChangelog1">MADA-V4.1.1 — Design Update · ~${formatNumber(computeAppWeight())} Ko</button>
     </div>
   `;
   document.getElementById('backHome').addEventListener('click', ()=>{ screen={name:'home'}; render(); });
   document.getElementById('userNameInput').addEventListener('change', (e)=>{
     progress.userName = e.target.value.trim().slice(0,20);
     saveProgress();
+  });
+  document.querySelectorAll('.ambient-seg-btn, .ambient-auto-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      progress.ambientMode = btn.dataset.amb;
+      saveProgress();
+      applyAmbient();
+      render();
+    });
   });
   document.querySelectorAll('.theme-seg-btn').forEach(btn=>{
     btn.addEventListener('click', ()=> setThemeMode(btn.dataset.mode));
