@@ -73,6 +73,8 @@
     --terrain-dry: rgba(150,146,96,0.17);
     --terrain-bush: rgba(166,152,106,0.17);
     --terrain-ridge: rgba(92,104,72,0.26);
+    --sea-1: rgba(158,192,208,0.52);
+    --sea-2: rgba(126,168,190,0.34);
     --cta-1: rgba(34,31,26,0.94);
     --cta-2: rgba(34,31,26,0.80);
     --cta-ink: #F7F5EF;
@@ -150,6 +152,8 @@
     --terrain-dry: rgba(196,184,122,0.14);
     --terrain-bush: rgba(206,186,132,0.14);
     --terrain-ridge: rgba(168,190,140,0.22);
+    --sea-1: rgba(44,84,104,0.6);
+    --sea-2: rgba(26,56,70,0.42);
     --cta-1: rgba(248,246,240,0.32);
     --cta-2: rgba(248,246,240,0.16);
     --cta-ink: #FFFDF8;
@@ -460,27 +464,22 @@
   .terrain-highlands{ fill:var(--terrain-high); }
   .terrain-dry{ fill:var(--terrain-dry); }
   .terrain-bush{ fill:var(--terrain-bush); }
-  .terrain-ridge{ fill:none; stroke:var(--terrain-ridge); stroke-width:1.6; stroke-linecap:round; }
+  .terrain-ridge{ fill:none; stroke:var(--terrain-ridge); stroke-width:1; stroke-linecap:round; }
 
   .journey-map-wrap{
     margin-top:16px; padding:16px; border-radius:20px; overflow:hidden;
     background:linear-gradient(160deg, var(--glass-1), var(--glass-2));
-    backdrop-filter:var(--glass-blur, blur(22px) saturate(190%)); -webkit-backdrop-filter:var(--glass-blur, blur(22px) saturate(190%));
+    backdrop-filter:var(--glass-blur, blur(22px) saturate(190%));
+    -webkit-backdrop-filter:var(--glass-blur, blur(22px) saturate(190%));
     border:1px solid var(--glass-border); box-shadow:var(--shadow);
   }
-  .journey-map{
-    width:100%; max-width:235px; height:auto; display:block; margin:0 auto;
-    overflow:hidden; transition:max-width .5s var(--swift), width .5s var(--swift), margin .5s var(--swift);
-    /* Les bords se fondent au lieu d'etre tranches net : on croise deux degrades
-       de masque (horizontal et vertical) pour adoucir les quatre cotes. */
-    -webkit-mask-image:
-      linear-gradient(to right, transparent 0%, #000 14%, #000 86%, transparent 100%),
-      linear-gradient(to bottom, transparent 0%, #000 7%, #000 93%, transparent 100%);
-    -webkit-mask-composite:source-in;
-    mask-image:
-      linear-gradient(to right, transparent 0%, #000 14%, #000 86%, transparent 100%),
-      linear-gradient(to bottom, transparent 0%, #000 7%, #000 93%, transparent 100%);
-    mask-composite:intersect;
+    .journey-map{
+    display:block; width:100%; height:auto;
+    /* Bord à bord : on annule le rembourrage du cadre pour la carte seule,
+       le reste du panneau le conserve. */
+    margin:-16px -16px 0;
+    width:calc(100% + 32px);
+    border-radius:19px 19px 0 0;
   }
   .journey-map-zoom{
     transform-origin:0 0;
@@ -498,15 +497,19 @@
     transition:fill .3s ease, r .3s var(--spring), stroke .3s ease;
   }
   .journey-pin.reached .journey-pin-dot{ fill:var(--accent); stroke:var(--accent); }
-  .journey-pin.selected .journey-pin-dot{ r:6.2; }
+  .journey-pin.selected .journey-pin-dot{ r:4; }
   .journey-pin-halo{ fill:var(--accent); opacity:0.22; animation:journeyPulse 2.6s ease-in-out infinite; }
   @keyframes journeyPulse{
     0%,100%{ opacity:0.14; }
     50%{ opacity:0.4; }
   }
+  .journey-pin-leader{
+    stroke:var(--ink-soft); stroke-width:0.7; opacity:0.3;
+  }
+  .journey-pin.reached .journey-pin-leader{ stroke:var(--accent-deep); opacity:0.45; }
   .journey-pin-label{
-    font-family:'Instrument Sans',sans-serif; font-size:7.5px; font-weight:600;
-    fill:var(--ink-soft); opacity:0.75; pointer-events:none;
+    font-family:'Instrument Sans',sans-serif; font-size:7px; font-weight:600;
+    fill:var(--ink-soft); opacity:0.7; pointer-events:none;
     paint-order:stroke; stroke:var(--map-label-halo); stroke-width:2.4; stroke-linejoin:round;
     transition:opacity .3s ease, fill .3s ease, font-size .3s var(--spring);
   }
@@ -514,18 +517,37 @@
   .journey-pin.selected .journey-pin-label{ font-size:8.5px; fill:var(--accent-deep); }
   .journey-map-zoom.zoomed .journey-pin-label{ opacity:0; }
   /* Au zoom seulement, la carte s'etend bord a bord pour profiter de la place */
-  .journey-map-wrap.is-zoomed .journey-map{
-    max-width:none; width:calc(100% + 32px); margin:-16px -16px 0;
-  }
   .journey-map-zoom.zoomed .journey-pin.selected .journey-pin-label{ opacity:1; }
 
   .journey-traveler{
-    fill:#fff; stroke:var(--accent-deep); stroke-width:1.6;
+    fill:#fff; stroke:var(--accent-deep); stroke-width:1;
     opacity:0; transition:opacity .4s ease, cx .9s var(--swift), cy .9s var(--swift);
     filter:drop-shadow(0 1px 3px rgba(0,0,0,.35));
   }
-  .journey-map-wrap{ transition:none; }
-  .journey-map-zoom{ transition:transform .72s cubic-bezier(.22,.61,.36,1); }
+
+
+
+
+  .journey-map-zoom{
+    transform-origin:0 0;
+    transition:transform .85s cubic-bezier(.22,.61,.36,1);
+    will-change:transform;
+  }
+  /* Les noms sont réduits d'autant que la carte grossit : ils gardent
+     donc exactement la même taille à l'écran, quel que soit le zoom. */
+  .journey-pin-label{ font-size:calc(4.5px / var(--mz, 1)); }
+  .journey-pin-leader{ stroke-width:calc(0.45px / var(--mz, 1)); }
+  .journey-pin-dot{ transition:fill .3s ease, stroke .3s ease; }
+  .journey-island{ filter:drop-shadow(0 1px 2px rgba(0,0,0,.12)); }
+  .journey-zoom-btn{
+    display:block; margin:12px auto 0; padding:9px 18px; border-radius:100px;
+    font-family:'Instrument Sans',sans-serif; font-size:12px; font-weight:600;
+    color:var(--accent-deep);
+    background:linear-gradient(160deg, var(--glass-1), var(--glass-2));
+    border:1px solid var(--glass-border); box-shadow:var(--shadow);
+    transition:transform .24s var(--spring);
+  }
+  .journey-zoom-btn:active{ transform:scale(0.95); }
 
   .journey-map-info{
     margin-top:14px; padding-top:14px; border-top:1px solid var(--line); text-align:center;
@@ -3917,6 +3939,28 @@ function computeHomeBanner(){
 }
 
 const CHANGELOG = [
+  { version:'5.0.5', name:'Notification Update', changes:[
+    'La carte s’ouvre désormais sur Madagascar en entier — on reconnaît l’île — puis se rapproche du trajet et de l’étape en cours pendant que le tracé se dessine',
+    'Le bouton bascule entre « Voir toute l’île » et « Où j’en suis »',
+    'Dégradé de la mer plus affirmé, dans les deux thèmes',
+  ]},
+  { version:'5.0.4', name:'Notification Update', changes:[
+    'Carte recadrée sur la région du voyage. Afficher l’île entière imposait un format deux fois plus haut que large, impossible à loger dans un panneau : d’où le rectangle flottant au milieu du cadre et les marges de part et d’autre',
+    'La carte occupe désormais toute la largeur du panneau, bord à bord, et ce sont ses coins arrondis qui la rognent — plus aucune bordure interne',
+    'Une mer en dégradé remplace le fond vide autour de l’île, pour que le recadrage paraisse voulu plutôt que subi, et l’île porte une ombre douce qui l’en détache',
+    'Tous les éléments dessinés — noms, points, tracé, filets — ont été réduits de 54 %, le nouveau cadre les agrandissant d’autant',
+  ]},
+  { version:'5.0.3', name:'Notification Update', changes:[
+    'Le zoom de la carte est de retour, et fluide. Sa lourdeur venait du relief, dessiné par des formes floutées au filtre que le navigateur devait recalculer à chaque image. Les biomes sont désormais rendus par des dégradés radiaux : bords aussi doux, mais composés directement sur la carte graphique',
+    'Les noms d’étapes sont réduits d’autant que la carte grossit : ils gardent exactement la même taille à l’écran, et restent tous lisibles pendant le zoom au lieu d’être masqués',
+    'À l’ouverture, la carte part de la vue d’ensemble puis s’approche doucement de l’étape en cours, le temps que le tracé se dessine — on voit d’un coup d’œil où l’on en est',
+    'Un bouton bascule entre « Où j’en suis » et « Vue d’ensemble », et appuyer sur une étape zoome dessus',
+  ]},
+  { version:'5.0.2', name:'Notification Update', changes:[
+    'Suppression du zoom de la carte, qui était poussif : il animait une transformation sur des formes floutées par filtre, obligeant le navigateur à tout recalculer image par image. Il masquait en plus les noms des autres étapes, perdant la lisibilité qu’il était censé apporter',
+    'Le vrai problème — le chevauchement des noms dans le nord — est désormais réglé à la source : les noms trop proches sont écartés verticalement, et un fin filet relie au point celui qui a dû être déplacé. La carte reste fixe, nette et entièrement lisible',
+    'Retrait du fondu sur les bords de la carte, qui produisait des contours flous disgracieux',
+  ]},
   { version:'5.0.1', name:'Notification Update', changes:[
     'Correction du tracé du parcours, qui s’arrêtait avant l’étape réellement atteinte : il se dessinait au prorata de l’XP, alors que les seuils des étapes ne sont pas répartis régulièrement et que les segments du trajet n’ont pas la même longueur. À Mahajanga, seuls 17 % du chemin apparaissaient au lieu de 37 %. Les longueurs sont désormais mesurées segment par segment',
     'Entre deux étapes, un marqueur se place sur le chemin à la distance exactement parcourue, et s’efface une fois l’étape atteinte pour ne pas faire doublon avec son point',
@@ -4879,7 +4923,7 @@ function renderSettings(){
         </button>
       </div>
 
-      <button class="footer-version mono selectable" id="goChangelog1">MADA-V5.0.1 — Notification Update · ~${formatNumber(computeAppWeight())} Ko</button>
+      <button class="footer-version mono selectable" id="goChangelog1">MADA-V5.0.5 — Notification Update · ~${formatNumber(computeAppWeight())} Ko</button>
     </div>
   `;
   document.getElementById('backHome').addEventListener('click', ()=>{ screen={name:'home'}; render(); });
@@ -5767,61 +5811,94 @@ function renderJourneyCard(){
 // Le trace se remplit proportionnellement a l'XP, et chaque etape est cliquable.
 const MADA_ISLAND_PATH = 'M160 11 C170 20, 176 36, 179 52 C183 70, 185 82, 187 100 C189 110, 190 116, 190 121 C188 134, 180 140, 173 149 C168 158, 164 172, 163 183 C159 206, 148 240, 136 268 C130 287, 126 300, 123 312 C117 335, 110 360, 104 373 C92 386, 72 394, 59 390 C46 386, 35 369, 29 351 C24 340, 21 334, 22 328 C18 312, 14 297, 15 283 C21 266, 32 251, 37 243 C34 224, 28 198, 30 181 C36 159, 50 137, 63 126 C72 120, 80 118, 87 116 C100 108, 113 94, 122 85 C129 72, 134 60, 137 52 C144 37, 152 20, 160 11 Z';
 
+
+// Répartition des noms d'étapes.
+// Dans le nord, cinq étapes tiennent dans un mouchoir : posés à la même
+// hauteur que leur point, leurs noms se chevauchent. On les écarte donc
+// verticalement, par ordre du sud vers le nord, et on relie chaque nom
+// à son point par un filet quand il a dû être déplacé.
+function layoutStopLabels(){
+  const MIN_GAP = 7;        // écart vertical minimal entre deux noms
+  const placed = [];
+  // Du sud au nord : on traite d'abord les plus bas, qui ont de la place
+  const order = JOURNEY_STOPS.map((s,i)=>({ s, i })).sort((a,b)=> b.s.mapY - a.s.mapY);
+  const result = {};
+  for(const { s } of order){
+    let y = s.mapY;
+    let guard = 0;
+    while(placed.some(py => Math.abs(py - y) < MIN_GAP) && guard < 40){
+      y -= 1; guard++;      // on remonte jusqu'à trouver un créneau libre
+    }
+    placed.push(y);
+    result[s.id] = y;
+  }
+  return result;
+}
+
 function renderJourneyMap(){
   const j = journeyState();
   const stops = JOURNEY_STOPS;
   const routeD = buildOrganicRoute(stops);
   return `
     <div class="journey-map-wrap card-rise">
-      <svg class="journey-map" id="journeyMapSvg" viewBox="0 0 200 404" aria-label="Carte du parcours">
+      <svg class="journey-map" id="journeyMapSvg" viewBox="${MAP_VIEW.x} ${MAP_VIEW.y} ${MAP_VIEW.w} ${MAP_VIEW.h}" aria-label="Carte du parcours">
         <defs>
           <linearGradient id="islandGrad" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stop-color="var(--map-island-1)"/>
             <stop offset="100%" stop-color="var(--map-island-2)"/>
           </linearGradient>
-          <filter id="terrainSoft" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="5"/>
-          </filter>
-          <filter id="terrainRidge" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="1.3"/>
-          </filter>
+          <linearGradient id="gSea" x1="0" y1="0" x2="0.6" y2="1">
+            <stop offset="0%" stop-color="var(--sea-1)"/>
+            <stop offset="100%" stop-color="var(--sea-2)"/>
+          </linearGradient>
+          <radialGradient id="gRain"><stop offset="0%" stop-color="var(--terrain-forest)"/><stop offset="100%" stop-color="transparent"/></radialGradient>
+          <radialGradient id="gHigh"><stop offset="0%" stop-color="var(--terrain-high)"/><stop offset="100%" stop-color="transparent"/></radialGradient>
+          <radialGradient id="gDry"><stop offset="0%" stop-color="var(--terrain-dry)"/><stop offset="100%" stop-color="transparent"/></radialGradient>
+          <radialGradient id="gBush"><stop offset="0%" stop-color="var(--terrain-bush)"/><stop offset="100%" stop-color="transparent"/></radialGradient>
           <filter id="routeGlow" x="-40%" y="-40%" width="180%" height="180%">
             <feGaussianBlur stdDeviation="2.4" result="b"/>
             <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
           </filter>
         </defs>
+        <rect class="journey-sea" x="${MAP_VIEW.x}" y="${MAP_VIEW.y}"
+              width="${MAP_VIEW.w}" height="${MAP_VIEW.h}" fill="url(#gSea)"/>
         <g id="journeyMapZoom" class="journey-map-zoom">
-          <path d="${MADA_ISLAND_PATH}" fill="url(#islandGrad)" stroke="var(--map-stroke)" stroke-width="1.5"/>
+          <path d="${MADA_ISLAND_PATH}" fill="url(#islandGrad)" stroke="var(--map-stroke)" stroke-width="1" class="journey-island"/>
           <ellipse cx="121" cy="44" rx="9" ry="6.5" transform="rotate(-20 121 44)"
                    fill="url(#islandGrad)" stroke="var(--map-stroke)" stroke-width="1.2"/>
 
           ${buildTerrain()}
 
-          <path d="${routeD}" fill="none" stroke="var(--map-route)" stroke-width="2.2"
-                stroke-linecap="round" stroke-dasharray="3 6" opacity="0.45"/>
-          <path id="journeyRouteDone" d="${routeD}" fill="none" stroke="var(--accent)" stroke-width="3.2"
+          <path d="${routeD}" fill="none" stroke="var(--map-route)" stroke-width="1.4"
+                stroke-linecap="round" stroke-dasharray="2 4" opacity="0.45"/>
+          <path id="journeyRouteDone" d="${routeD}" fill="none" stroke="var(--accent)" stroke-width="2.1"
                 stroke-linecap="round" filter="url(#routeGlow)"/>
-          <circle id="journeyTraveler" class="journey-traveler" r="3.6" cx="-99" cy="-99"/>
+          <circle id="journeyTraveler" class="journey-traveler" r="2.3" cx="-99" cy="-99"/>
 
-          ${stops.map((s,i)=>{
+          ${(()=>{ const ly = layoutStopLabels(); return stops.map((s,i)=>{
             const reached = (progress.xp||0) >= s.xp;
             const isCurrent = i === j.currentIdx;
             // Les labels basculent a gauche quand l'etape est proche du bord droit
             const flip = s.mapX > 130;
+            const labY = ly[s.id];
+            const moved = Math.abs(labY - s.mapY) > 1;
             return `
               <g class="journey-pin ${reached?'reached':''} ${isCurrent?'current':''}"
                  data-stop="${s.id}" data-x="${s.mapX}" data-y="${s.mapY}"
                  tabindex="0" role="button" aria-label="${s.name}"
                  style="animation-delay:${i*90}ms">
-                ${isCurrent ? `<circle cx="${s.mapX}" cy="${s.mapY}" r="10" class="journey-pin-halo"/>` : ''}
-                <circle cx="${s.mapX}" cy="${s.mapY}" r="11" class="journey-pin-hit"/>
-                <circle cx="${s.mapX}" cy="${s.mapY}" r="4.2" class="journey-pin-dot"/>
-                <text class="journey-pin-label" x="${s.mapX + (flip ? -8 : 8)}" y="${s.mapY + 3.2}"
+                ${isCurrent ? `<circle cx="${s.mapX}" cy="${s.mapY}" r="6.5" class="journey-pin-halo"/>` : ''}
+                <circle cx="${s.mapX}" cy="${s.mapY}" r="7" class="journey-pin-hit"/>
+                <circle cx="${s.mapX}" cy="${s.mapY}" r="2.7" class="journey-pin-dot"/>
+                ${moved ? `<line class="journey-pin-leader" x1="${s.mapX + (flip ? -3 : 3)}" y1="${s.mapY}"
+                            x2="${s.mapX + (flip ? -5 : 5)}" y2="${labY}"/>` : ''}
+                <text class="journey-pin-label" x="${s.mapX + (flip ? -6 : 6)}" y="${labY + 1.7}"
                       text-anchor="${flip ? 'end' : 'start'}">${s.name}</text>
               </g>`;
-          }).join('')}
+          }).join(''); })()}
         </g>
       </svg>
+      <button class="journey-zoom-btn selectable" id="journeyZoomBtn">Où j’en suis</button>
       <div class="journey-map-info" id="journeyMapInfo">
         <div class="journey-map-info-name">${j.current.emoji} ${j.current.name}</div>
         <div class="journey-map-info-note">${j.current.note}</div>
@@ -5833,22 +5910,39 @@ function renderJourneyMap(){
 // Relief suggere par zones organiques floutees plutot que par pictogrammes :
 // des taches aux contours irreguliers pour les biomes, des cretes ondulees
 // pour la dorsale montagneuse. Le flou evite tout effet "dessine a la main".
+// Cadre de la carte : recadré sur la région du voyage. Garder l'île
+// entière imposait un format deux fois plus haut que large, impossible
+// à loger dans une carte sans laisser du vide de tous côtés.
+const MAP_VIEW = { x:20, y:0, w:180, h:220 };
+
+// Recul permettant de voir l'île entière à l'intérieur de ce cadre
+const ISLAND_FIT = (()=>{
+  const W = 200, H = 404, cx = 100, cy = 202;      // boîte du dessin de l'île
+  const s = Math.min(MAP_VIEW.w / W, MAP_VIEW.h / H);
+  return {
+    s: +s.toFixed(3),
+    tx: +(MAP_VIEW.x + MAP_VIEW.w/2 - cx*s).toFixed(1),
+    ty: +(MAP_VIEW.y + MAP_VIEW.h/2 - cy*s).toFixed(1),
+  };
+})();
+
 function buildTerrain(){
-  // Foret pluviale : longue bande epousant la cote est
-  const rainforest = 'M150,98 C166,116 172,148 167,180 C162,212 153,242 143,268 '
-                   + 'C136,286 127,292 124,281 C121,266 133,241 139,213 '
-                   + 'C146,184 147,150 142,120 C139,104 144,90 150,98 Z';
-  // Hauts plateaux : coeur de l ile, legerement plus soutenu
-  const highlands = 'M114,112 C127,134 122,164 115,194 C108,226 101,252 95,266 '
-                  + 'C88,280 81,275 84,259 C89,233 98,205 103,174 '
-                  + 'C108,145 103,124 107,113 C109,104 112,105 114,112 Z';
-  // Foret seche du nord-ouest
-  const dryforest = 'M88,110 C97,123 92,141 81,152 C70,163 59,166 57,157 '
-                  + 'C55,146 67,137 75,127 C81,119 83,105 88,110 Z';
-  // Bush epineux du grand sud
-  const bush = 'M95,290 C104,308 97,332 84,347 C71,362 57,359 55,346 '
-             + 'C53,331 67,318 77,305 C85,294 90,283 95,290 Z';
-  // Cretes : quelques traits ondules le long de la dorsale
+  // Les biomes sont rendus par des dégradés radiaux plutôt que par des
+  // formes floutées au filtre : le filtre obligeait le navigateur à tout
+  // recalculer à chaque image pendant un zoom. Un dégradé donne des bords
+  // aussi doux, mais se compose directement sur la carte graphique.
+  const zones = [
+    // cx, cy, rx, ry, rotation, dégradé
+    [150, 180,  26, 96, -6,  'gRain'],   // forêt pluviale, côte est
+    [106, 190,  22, 90,  4,  'gHigh'],   // hauts plateaux
+    [ 74, 134,  20, 30, -22, 'gDry'],    // forêt sèche du nord-ouest
+    [ 76, 320,  26, 38, -12, 'gBush'],   // bush épineux du sud
+  ].map(([cx,cy,rx,ry,rot,g]) =>
+    `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}"
+              transform="rotate(${rot} ${cx} ${cy})" fill="url(#${g})"/>`
+  ).join('');
+
+  // Crêtes de la dorsale : traits fins, sans flou
   const ridges = [
     'M110,124 C118,142 110,160 117,178',
     'M103,170 C111,188 102,206 109,224',
@@ -5856,16 +5950,7 @@ function buildTerrain(){
     'M118,138 C124,152 117,166 122,180',
   ].map(d=>`<path d="${d}" class="terrain-ridge"/>`).join('');
 
-  return `
-    <g class="terrain" aria-hidden="true">
-      <g filter="url(#terrainSoft)">
-        <path d="${rainforest}" class="terrain-zone terrain-rainforest"/>
-        <path d="${highlands}" class="terrain-zone terrain-highlands"/>
-        <path d="${dryforest}" class="terrain-zone terrain-dry"/>
-        <path d="${bush}" class="terrain-zone terrain-bush"/>
-      </g>
-      <g filter="url(#terrainRidge)">${ridges}</g>
-    </g>`;
+  return `<g class="terrain" aria-hidden="true">${zones}${ridges}</g>`;
 }
 
 // Trace organique : au lieu de segments droits, on relie les etapes par des courbes
@@ -5920,35 +6005,69 @@ function routeProgressLength(){
 }
 
 
-// Zoom automatique : dans le nord, les étapes sont si proches que leurs
-// noms se chevauchent. On s'approche alors de la zone courante ; ailleurs
-// on garde la vue d'ensemble, plus lisible.
-function autoZoomJourney(){
+
+/* ---------- Zoom de la carte ----------
+   Le relief n'utilise plus de filtre : la transformation se compose
+   désormais sur la carte graphique, sans recalcul par image.
+   Les noms sont contre-mis à l'échelle pour garder leur taille à
+   l'écran — c'est ce qui les rendait illisibles auparavant.          */
+let journeyZoom = { on:false, stopId:null };
+
+function applyJourneyZoom(stop, animate){
   const g = document.getElementById('journeyMapZoom');
   const wrap = document.querySelector('.journey-map-wrap');
   if(!g || !wrap) return;
-  const j = journeyState();
-  const here = j.current;
-  // Distance à l'étape voisine la plus proche
-  let nearest = Infinity;
-  JOURNEY_STOPS.forEach(s=>{
-    if(s.id === here.id) return;
-    const d = Math.hypot(s.mapX - here.mapX, s.mapY - here.mapY);
-    if(d < nearest) nearest = d;
-  });
-  if(nearest > 26){ // assez d'air autour : vue d'ensemble
-    g.style.transform = 'translate(0px, 0px) scale(1)';
-    g.classList.remove('zoomed');
+
+  // Vue d'ensemble : l'île entière ramenée dans le cadre du voyage.
+  // Sans ce recul, on ne comprenait pas qu'il s'agit de Madagascar —
+  // le cadre ne montre que sa moitié nord.
+  if(!stop){
+    journeyZoom = { on:false, stopId:null };
+    g.style.transition = animate === false ? 'none' : '';
+    g.style.setProperty('--mz', ISLAND_FIT.s);
+    g.style.transform = `translate(${ISLAND_FIT.tx}px, ${ISLAND_FIT.ty}px) scale(${ISLAND_FIT.s})`;
     wrap.classList.remove('is-zoomed');
     return;
   }
-  const Z = 1.7, VW = 200, VH = 404, CX = VW/2, CY = VH/2;
-  const halfW = CX / Z, halfH = CY / Z;
-  const cx = Math.max(halfW, Math.min(VW - halfW, here.mapX));
-  const cy = Math.max(halfH, Math.min(VH - halfH, here.mapY));
-  const tx = (CX - cx) * Z, ty = (CY - cy) * Z;
-  g.style.transform = `translate(${(CX - CX*Z + tx).toFixed(1)}px, ${(CY - CY*Z + ty).toFixed(1)}px) scale(${Z})`;
+
+  const Z = 2.1;
+  const CX = MAP_VIEW.x + MAP_VIEW.w/2, CY = MAP_VIEW.y + MAP_VIEW.h/2;
+  const halfW = MAP_VIEW.w / (2*Z), halfH = MAP_VIEW.h / (2*Z);
+  // On borne le centrage pour que la vue ne sorte jamais du cadre
+  const cx = Math.max(MAP_VIEW.x + halfW, Math.min(MAP_VIEW.x + MAP_VIEW.w - halfW, stop.mapX));
+  const cy = Math.max(MAP_VIEW.y + halfH, Math.min(MAP_VIEW.y + MAP_VIEW.h - halfH, stop.mapY));
+
+  g.style.transition = animate === false ? 'none' : '';
+  g.style.setProperty('--mz', Z);
+  // Un point p se projette en (C - c*Z + p*Z) : l'étape visée tombe donc
+  // pile au centre du cadre.
+  g.style.transform = `translate(${(CX - cx*Z).toFixed(2)}px, ${(CY - cy*Z).toFixed(2)}px) scale(${Z})`;
   wrap.classList.add('is-zoomed');
+  journeyZoom = { on:true, stopId:stop.id };
+}
+
+function toggleJourneyZoom(stop){
+  if(journeyZoom.on && journeyZoom.stopId === stop.id) applyJourneyZoom(null);
+  else applyJourneyZoom(stop);
+  syncJourneyZoomBtn();
+}
+
+function syncJourneyZoomBtn(){
+  const btn = document.getElementById('journeyZoomBtn');
+  if(!btn) return;
+  btn.textContent = journeyZoom.on ? 'Voir toute l’île' : 'Où j’en suis';
+}
+
+// À l'ouverture : la carte part de la vue d'ensemble puis s'approche
+// doucement de l'étape en cours, le temps que le tracé se dessine.
+// À l'ouverture : on part de l'île entière — le temps de comprendre où
+// l'on est — puis la carte se rapproche de l'étape en cours pendant que
+// le tracé se dessine.
+function introJourneyZoom(){
+  const j = journeyState();
+  applyJourneyZoom(null, false);   // posé sans animation, c'est l'état de départ
+  syncJourneyZoomBtn();
+  setTimeout(()=>{ applyJourneyZoom(j.current); syncJourneyZoomBtn(); }, 1600);
 }
 
 function animateJourneyRoute(){
@@ -6071,44 +6190,22 @@ function renderJourney(){
   `;
   document.getElementById('jBack').addEventListener('click', ()=>{ screen={name:'home'}; render(); });
   animateJourneyRoute();
-  autoZoomJourney();
-  // Appui sur une etape : zoom doux vers elle + detail sous la carte
-  let zoomedStop = null;
-  function resetMapZoom(){
-    const g = document.getElementById('journeyMapZoom');
-    if(g){ g.style.transform = 'translate(0px, 0px) scale(1)'; g.classList.remove('zoomed'); }
-    document.querySelector('.journey-map-wrap')?.classList.remove('is-zoomed');
-    zoomedStop = null;
-    document.querySelectorAll('.journey-pin').forEach(p=>p.classList.remove('selected'));
-  }
+  introJourneyZoom();
+  document.getElementById('journeyZoomBtn')?.addEventListener('click', ()=>{
+    if(journeyZoom.on) applyJourneyZoom(null); else applyJourneyZoom(journeyState().current);
+    syncJourneyZoomBtn();
+  });
+  // Appui sur une étape : on affiche son détail sous la carte.
+  // Plus de zoom : animer une transformation sur des formes floutées par
+  // filtre obligeait le navigateur à tout recalculer image par image.
   document.querySelectorAll('.journey-pin').forEach(pin=>{
     const show = ()=>{
       const stop = JOURNEY_STOPS.find(s=>s.id === pin.dataset.stop);
       if(!stop) return;
-      // Un second appui sur la meme etape dezoome
-      if(zoomedStop === stop.id){ resetMapZoom(); return; }
-      zoomedStop = stop.id;
       const reached = (progress.xp||0) >= stop.xp;
       const info = document.getElementById('journeyMapInfo');
       document.querySelectorAll('.journey-pin').forEach(p=>p.classList.remove('selected'));
       pin.classList.add('selected');
-
-      // Zoom : on recentre le groupe sur l'etape choisie
-      const g = document.getElementById('journeyMapZoom');
-      if(g){
-        g.classList.add('zoomed');
-        document.querySelector('.journey-map-wrap')?.classList.add('is-zoomed');
-        const Z = 1.35, VW = 200, VH = 404, CX = VW/2, CY = VH/2;
-        // On borne le point de recentrage : sinon, pour une etape proche d'un bord,
-        // la vue sortirait du dessin et laisserait du vide dans le cadre.
-        const halfW = CX / Z, halfH = CY / Z;
-        const cx = Math.max(halfW, Math.min(VW - halfW, stop.mapX));
-        const cy = Math.max(halfH, Math.min(VH - halfH, stop.mapY));
-        const tx = (CX - cx) * Z;
-        const ty = (CY - cy) * Z;
-        g.style.transform = `translate(${(CX - CX*Z + tx).toFixed(1)}px, ${(CY - CY*Z + ty).toFixed(1)}px) scale(${Z})`;
-      }
-
       info.innerHTML = reached
         ? `<div class="journey-map-info-name">${stop.emoji} ${stop.name}</div>
            <div class="journey-map-info-note">${stop.note}</div>
@@ -6116,13 +6213,11 @@ function renderJourney(){
         : `<div class="journey-map-info-name">${stop.emoji} ${stop.name}</div>
            <div class="journey-map-info-note">Étape encore verrouillée — débloquée à ${formatNumber(stop.xp)} XP.</div>`;
       info.classList.remove('pop'); void info.offsetWidth; info.classList.add('pop');
+      toggleJourneyZoom(stop);
     };
     pin.addEventListener('click', show);
     pin.addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); show(); } });
   });
-  // Appui hors d'une etape : on revient a la vue d'ensemble
-  const svgEl = document.getElementById('journeyMapSvg');
-  if(svgEl) svgEl.addEventListener('click', (e)=>{ if(!e.target.closest('.journey-pin')) resetMapZoom(); });
   const setBtn = document.getElementById('travelSet') || document.getElementById('travelEdit');
   if(setBtn) setBtn.addEventListener('click', openTravelDatePrompt);
   document.querySelectorAll('[data-sc]').forEach(btn=>{
@@ -9361,4 +9456,28 @@ if(window.speechSynthesis){
 loadProgress();
 </script>
 </body>
+  // Appui sur une étape : on affiche son détail sous la carte.
+  // Plus de zoom : animer une transformation sur des formes floutées par
+  // filtre obligeait le navigateur à tout recalculer image par image,
+  // ce qui rendait le geste poussif.
+  document.querySelectorAll('.journey-pin').forEach(pin=>{
+    const show = ()=>{
+      const stop = JOURNEY_STOPS.find(s=>s.id === pin.dataset.stop);
+      if(!stop) return;
+      const reached = (progress.xp||0) >= stop.xp;
+      const info = document.getElementById('journeyMapInfo');
+      document.querySelectorAll('.journey-pin').forEach(p=>p.classList.remove('selected'));
+      pin.classList.add('selected');
+      info.innerHTML = reached
+        ? `<div class="journey-map-info-name">${stop.emoji} ${stop.name}</div>
+           <div class="journey-map-info-note">${stop.note}</div>
+           <div class="journey-map-info-word"><strong>${stop.word.mg}</strong> — ${stop.word.fr}</div>`
+        : `<div class="journey-map-info-name">${stop.emoji} ${stop.name}</div>
+           <div class="journey-map-info-note">Étape encore verrouillée — débloquée à ${formatNumber(stop.xp)} XP.</div>`;
+      info.classList.remove('pop'); void info.offsetWidth; info.classList.add('pop');
+      toggleJourneyZoom(stop);
+    };
+    pin.addEventListener('click', show);
+    pin.addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); show(); } });
+  });
 </html>
