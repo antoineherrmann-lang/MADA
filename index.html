@@ -401,6 +401,8 @@
     100%{ opacity:1; transform:scale(1); }
   }
 
+
+
   .journey-card-main{ display:flex; gap:14px; align-items:stretch; }
   .journey-card-left{ flex:1; min-width:0; display:flex; flex-direction:column; }
   .journey-card-right{ flex-shrink:0; width:62px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; }
@@ -516,6 +518,15 @@
     max-width:none; width:calc(100% + 32px); margin:-16px -16px 0;
   }
   .journey-map-zoom.zoomed .journey-pin.selected .journey-pin-label{ opacity:1; }
+
+  .journey-traveler{
+    fill:#fff; stroke:var(--accent-deep); stroke-width:1.6;
+    opacity:0; transition:opacity .4s ease, cx .9s var(--swift), cy .9s var(--swift);
+    filter:drop-shadow(0 1px 3px rgba(0,0,0,.35));
+  }
+  .journey-map-wrap{ transition:none; }
+  .journey-map-zoom{ transition:transform .72s cubic-bezier(.22,.61,.36,1); }
+
   .journey-map-info{
     margin-top:14px; padding-top:14px; border-top:1px solid var(--line); text-align:center;
   }
@@ -896,6 +907,8 @@
     transition:transform .36s cubic-bezier(.34,1.56,.64,1), width .28s ease;
     z-index:0;
   }
+  /* Lentille de sélection : plus bombée que les autres surfaces,
+     car c'est l'élément que la bibliothèque fait « gonfler » le plus. */
   .tab-slider-fill{
     width:100%; height:100%; transform-origin:center;
     background:linear-gradient(165deg, var(--tabslider-1), var(--tabslider-2));
@@ -3229,6 +3242,10 @@ function initTabBar(){
 }
 let lastActiveTab = null;
 let tabBarDragged = false;
+
+
+
+
 function updateTabBar(screenName){
   const bar = document.querySelector('.tab-bar');
   if(!bar) return;
@@ -3900,6 +3917,11 @@ function computeHomeBanner(){
 }
 
 const CHANGELOG = [
+  { version:'5.0.1', name:'Notification Update', changes:[
+    'Correction du tracé du parcours, qui s’arrêtait avant l’étape réellement atteinte : il se dessinait au prorata de l’XP, alors que les seuils des étapes ne sont pas répartis régulièrement et que les segments du trajet n’ont pas la même longueur. À Mahajanga, seuls 17 % du chemin apparaissaient au lieu de 37 %. Les longueurs sont désormais mesurées segment par segment',
+    'Entre deux étapes, un marqueur se place sur le chemin à la distance exactement parcourue, et s’efface une fois l’étape atteinte pour ne pas faire doublon avec son point',
+    'La carte s’approche d’elle-même lorsque les étapes se resserrent — dans le nord, où leurs noms se chevauchaient — et garde la vue d’ensemble ailleurs',
+  ]},
   { version:'5.0.0', name:'Notification Update', changes:[
     'Notifications d’apprentissage : MADA envoie désormais un rappel tous les deux jours, alternativement à 13h et 18h30, même app fermée',
     'Rien à configurer : au lancement suivant, une seule proposition apparaît. Accepter active tout automatiquement, refuser la fait disparaître définitivement — elle ne reviendra jamais',
@@ -4857,7 +4879,7 @@ function renderSettings(){
         </button>
       </div>
 
-      <button class="footer-version mono selectable" id="goChangelog1">MADA-V5.0.0 — Notification Update · ~${formatNumber(computeAppWeight())} Ko</button>
+      <button class="footer-version mono selectable" id="goChangelog1">MADA-V5.0.1 — Notification Update · ~${formatNumber(computeAppWeight())} Ko</button>
     </div>
   `;
   document.getElementById('backHome').addEventListener('click', ()=>{ screen={name:'home'}; render(); });
@@ -5779,6 +5801,7 @@ function renderJourneyMap(){
                 stroke-linecap="round" stroke-dasharray="3 6" opacity="0.45"/>
           <path id="journeyRouteDone" d="${routeD}" fill="none" stroke="var(--accent)" stroke-width="3.2"
                 stroke-linecap="round" filter="url(#routeGlow)"/>
+          <circle id="journeyTraveler" class="journey-traveler" r="3.6" cx="-99" cy="-99"/>
 
           ${stops.map((s,i)=>{
             const reached = (progress.xp||0) >= s.xp;
@@ -5848,8 +5871,9 @@ function buildTerrain(){
 // Trace organique : au lieu de segments droits, on relie les etapes par des courbes
 // dont les points de controle sont decales perpendiculairement a la direction.
 // Le decalage alterne de sens, ce qui donne un chemin qui serpente comme une vraie route.
-function buildOrganicRoute(stops){
+function buildOrganicRoute(stops, indexOffset){
   if(stops.length < 2) return '';
+  const off = indexOffset || 0;
   let d = `M${stops[0].mapX},${stops[0].mapY}`;
   for(let i=0;i<stops.length-1;i++){
     const a = stops[i], b = stops[i+1];
@@ -5858,7 +5882,7 @@ function buildOrganicRoute(stops){
     // Normale a la direction du segment
     const nx = -dy/len, ny = dx/len;
     // Amplitude proportionnelle a la longueur, plafonnee, de sens alterne
-    const amp = Math.min(len * 0.22, 13) * (i % 2 === 0 ? 1 : -1);
+    const amp = Math.min(len * 0.22, 13) * ((i + off) % 2 === 0 ? 1 : -1);
     const c1x = a.mapX + dx*0.3 + nx*amp, c1y = a.mapY + dy*0.3 + ny*amp;
     const c2x = a.mapX + dx*0.7 + nx*amp, c2y = a.mapY + dy*0.7 + ny*amp;
     d += ` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${b.mapX},${b.mapY}`;
@@ -5867,17 +5891,96 @@ function buildOrganicRoute(stops){
 }
 
 // Le trace vert se dessine proportionnellement a la progression reelle.
+// Longueur cumulée du tracé à chaque étape.
+// Les seuils d'XP ne sont pas répartis régulièrement et les segments du
+// trajet n'ont pas la même longueur : dessiner le chemin au prorata de
+// l'XP le faisait s'arrêter bien avant l'étape atteinte.
+function routeCumulativeLengths(){
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const probe = document.createElementNS(svgNS, 'path');
+  const cum = [0];
+  let total = 0;
+  for(let i = 0; i < JOURNEY_STOPS.length - 1; i++){
+    probe.setAttribute('d', buildOrganicRoute([JOURNEY_STOPS[i], JOURNEY_STOPS[i+1]], i));
+    total += probe.getTotalLength();
+    cum.push(total);
+  }
+  return { cum, total };
+}
+
+// Distance parcourue sur le tracé : jusqu'à l'étape atteinte, plus la
+// fraction déjà franchie du segment en cours.
+function routeProgressLength(){
+  const j = journeyState();
+  const { cum, total } = routeCumulativeLengths();
+  const i = Math.min(j.currentIdx, cum.length - 1);
+  const here = cum[i];
+  const next = (i + 1 < cum.length) ? cum[i+1] : here;
+  return { done: here + (next - here) * j.segRatio, total };
+}
+
+
+// Zoom automatique : dans le nord, les étapes sont si proches que leurs
+// noms se chevauchent. On s'approche alors de la zone courante ; ailleurs
+// on garde la vue d'ensemble, plus lisible.
+function autoZoomJourney(){
+  const g = document.getElementById('journeyMapZoom');
+  const wrap = document.querySelector('.journey-map-wrap');
+  if(!g || !wrap) return;
+  const j = journeyState();
+  const here = j.current;
+  // Distance à l'étape voisine la plus proche
+  let nearest = Infinity;
+  JOURNEY_STOPS.forEach(s=>{
+    if(s.id === here.id) return;
+    const d = Math.hypot(s.mapX - here.mapX, s.mapY - here.mapY);
+    if(d < nearest) nearest = d;
+  });
+  if(nearest > 26){ // assez d'air autour : vue d'ensemble
+    g.style.transform = 'translate(0px, 0px) scale(1)';
+    g.classList.remove('zoomed');
+    wrap.classList.remove('is-zoomed');
+    return;
+  }
+  const Z = 1.7, VW = 200, VH = 404, CX = VW/2, CY = VH/2;
+  const halfW = CX / Z, halfH = CY / Z;
+  const cx = Math.max(halfW, Math.min(VW - halfW, here.mapX));
+  const cy = Math.max(halfH, Math.min(VH - halfH, here.mapY));
+  const tx = (CX - cx) * Z, ty = (CY - cy) * Z;
+  g.style.transform = `translate(${(CX - CX*Z + tx).toFixed(1)}px, ${(CY - CY*Z + ty).toFixed(1)}px) scale(${Z})`;
+  wrap.classList.add('is-zoomed');
+}
+
 function animateJourneyRoute(){
   const line = document.getElementById('journeyRouteDone');
   if(!line) return;
-  const j = journeyState();
   const len = line.getTotalLength();
+  const { done, total } = routeProgressLength();
+  // On rapporte la mesure à la longueur réelle de l'élément rendu,
+  // qui peut différer légèrement de la somme des segments.
+  const ratio = total > 0 ? Math.max(0, Math.min(1, done / total)) : 0;
   line.style.strokeDasharray = len;
   line.style.strokeDashoffset = len;
   requestAnimationFrame(()=>{
     line.style.transition = 'stroke-dashoffset 1.1s cubic-bezier(.22,.61,.36,1)';
-    line.style.strokeDashoffset = len * (1 - j.overall);
+    line.style.strokeDashoffset = len * (1 - ratio);
+    placeTraveler(line, len * ratio);
   });
+}
+
+// Marqueur posé sur le chemin, à l'endroit exact où l'on se trouve
+// entre deux étapes.
+function placeTraveler(line, atLength){
+  const dot = document.getElementById('journeyTraveler');
+  if(!dot) return;
+  const j = journeyState();
+  // Pile sur une étape : le marqueur ferait doublon avec le point de l'étape
+  if(!j.next || j.segRatio < 0.02){ dot.style.opacity = '0'; return; }
+  let p;
+  try{ p = line.getPointAtLength(atLength); }catch(e){ return; }
+  dot.setAttribute('cx', p.x);
+  dot.setAttribute('cy', p.y);
+  dot.style.opacity = '1';
 }
 
 function renderJourney(){
@@ -5968,6 +6071,7 @@ function renderJourney(){
   `;
   document.getElementById('jBack').addEventListener('click', ()=>{ screen={name:'home'}; render(); });
   animateJourneyRoute();
+  autoZoomJourney();
   // Appui sur une etape : zoom doux vers elle + detail sous la carte
   let zoomedStop = null;
   function resetMapZoom(){
